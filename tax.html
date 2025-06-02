@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Invoice</title>
+  <!-- Link to Google Font (Roboto) -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* Global box-sizing for better control */
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    /* Basic body styles - remove default margins */
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Roboto', Arial, sans-serif;
+      line-height: 1.5;
+      color: #333;
+      background: #f8f8f8;
+    }
+
+    /* --- Screen Styles (Default - applies to desktop and larger screens) --- */
+    /* A4 Container - Fluid on screen */
+    .a4-container {
+      width: 100%; /* Full width on screen */
+      min-height: auto; /* Height based on content on screen */
+      max-width: 800px; /* Optional: limit max width on large screens for better readability */
+      margin: 0 auto; /* Center on screen */
+      background: #fff;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.1); /* Shadow only on screen */
+      overflow: hidden;
+      padding: 20px; /* Screen padding (adjust as needed) */
+    }
+
+    /* Header */
+    .top-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 15px;
+      padding-bottom: 5px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .top-left h1 { margin: 0; font-size: 26px; font-weight: 700; }
+    .top-left small { font-size: 13px; display: block; margin-top: 4px; color: #555; }
+    .top-right img { max-width: 110px; height: auto; display: block; }
+    hr { display: none; }
+
+    .section {
+        margin-bottom: 20px;
+    }
+
+    table.invoice-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      table-layout: fixed; /* Essential for column widths on screen */
+    }
+
+    table.invoice-table thead th {
+        background-color: #f2f2f2;
+        font-weight: 700;
+        text-align: left;
+        border: 1px solid #ccc;
+        padding: 8px 10px; /* Padding for headers */
+        font-size: 13px;
+        white-space: normal; /* Allow headers to wrap */
+    }
+
+    table.invoice-table tbody td,
+    table.invoice-table tfoot td {
+      border: 1px solid #ddd;
+      padding: 4px 6px; /* Reduced Padding for Item Table Body/Footer Cells */
+      font-size: 14px;
+      text-align: left;
+      vertical-align: top;
+      overflow-wrap: break-word;
+      word-wrap: break-word;
+    }
+
+    .info-table td {
+        border: none;
+        padding: 0 10px 0 0;
+        vertical-align: top;
+    }
+    .info-table td:last-child { padding-right: 0; }
+
+    table.invoice-table tfoot td { font-weight: 700; background-color: #f9f9f9; }
+
+    .section-title { font-weight: 700; margin-bottom: 8px; font-size: 14px; color: #000; }
+    .company-info, .gstin-info { font-size: 13px; line-height: 1.4; color: #555; }
+    .gstin-info div { margin-bottom: 4px; }
+
+    /* Style for form fields in the info table (label and input on same line for large screens) */
+    .info-table .form-field {
+        display: flex; /* Use flexbox */
+        align-items: flex-start; /* Align items to the top */
+        margin-bottom: 8px;
+    }
+
+    .info-table .form-field label {
+        flex-shrink: 0;
+        width: 100px; /* Fixed width for labels */
+        margin-bottom: 0;
+        margin-right: 8px;
+        font-size: 13px;
+        color: #333;
+        padding-top: 4px; /* Align label text base with input text */
+        font-weight: 400;
+    }
+
+    /* Style for inputs AND textarea in info table (on screen) */
+    .info-table .form-field input, /* Selects all inputs */
+    .info-table .form-field textarea { /* Selects textarea */
+        flex-grow: 1;
+        width: auto;
+        padding: 4px 8px;
+        font-size: 13px;
+        border-radius: 3px;
+        line-height: 1.4;
+        min-width: 0; /* Prevent flex overflow */
+        height: auto; /* Allow height to adjust */
+        resize: vertical; /* Allow user vertical resize */
+        overflow: auto; /* Show scrollbar if content exceeds min-height */
+        outline: 1px solid #ccc; /* Use outline instead of border for better visual separation */
+        border: none; /* Ensure border is off when using outline */
+    }
+     /* Increased min-height for Address textarea (Screen) */
+    .info-table .form-field textarea {
+        min-height: 58px; /* Approx 3 lines */
+    }
+     /* Override min-height for non-textarea inputs */
+     .info-table .form-field input:not(textarea) { /* Target inputs that are NOT textareas */
+         min-height: unset;
+         resize: none;
+         overflow: hidden; /* Hide overflow for single-line inputs */
+     }
+
+
+    /* Style for inputs and textarea in item table body cells (On Screen) */
+    .item-table tbody td input,
+    .item-table tbody td textarea {
+        width: calc(100% - 4px); /* Leave 2px on each side for visual separation */
+        padding: 4px 6px; /* Reduced internal input padding */
+        margin: 0;
+        box-sizing: border-box;
+        font-size: 14px;
+        border-radius: 3px;
+        line-height: 1.4;
+        min-width: 0;
+        outline: 1px solid #ccc; /* Use outline instead of border for better visual separation */
+        border: none; /* Ensure border is off when using outline */
+    }
+
+    .item-table textarea {
+        height: auto;
+        min-height: 65px; /* Approx 3 lines */
+        resize: vertical;
+        overflow: auto;
+        overflow-wrap: break-word;
+        word-wrap: break-word;
+    }
+
+
+    /* Style for inputs that should look like text (especially in print) */
+    /* These styles ensure inputs look like plain text in print, but keep outline/border on screen */
+    input[readonly] {
+        /* Screen Styles (Overridden in @media print) */
+        border: 1px dashed #ccc; /* Indicate it's an input, but read-only */
+        background-color: #f9f9f9; /* Light background */
+        padding: 4px 6px; /* Small padding */
+        margin: 0;
+        box-shadow: none;
+        outline: none;
+        font-size: 14px;
+        font-weight: 700;
+        text-align: left; /* Default left */
+        display: inline-block;
+        width: auto; /* Auto width on screen */
+        white-space: nowrap; /* Prevent wrapping on screen */
+    }
+
+
+     /* Specific alignment for readonly inputs showing numbers/currency (Screen) */
+    table.invoice-table td input[readonly] {
+        text-align: right !important; /* Right align on screen */
+        padding-left: 5px !important;
+        width: 100% !important; /* Take full cell width on screen */
+    }
+
+    /* Style for the container holding currency symbol and input (Screen) */
+     .currency-input-flex {
+        display: flex;
+        justify-content: flex-end; /* Align content to the right */
+        align-items: center;
+        gap: 4px;
+        width: 100%; /* Ensure the flex container takes full cell width */
+     }
+     .currency-input-flex span {
+        flex-shrink: 0;
+        font-weight: 700;
+     }
+     .currency-input-flex input[readonly] {
+        text-align: right !important;
+        width: auto; /* Let input size based on content/flex-grow */
+        flex-grow: 1; /* Allow it to grow */
+        min-width: 60px; /* Minimum width */
+     }
+
+
+    /* Item table column widths (Screen) */
+    .item-table th:nth-child(1) { width: 5%; }   /* Sr. No. */
+    .item-table th:nth-child(2) { width: 30%; }  /* Description */
+    .item-table th:nth-child(3) { width: 13%; }  /* HSN / SAC */
+    .item-table th:nth-child(4) { width: 9%; }   /* Qty */
+    .item-table th:nth-child(5) { width: 17%; }  /* Discount */
+    .item-table th:nth-child(6) { width: 26%; }  /* Taxable Value */
+
+
+    .details-block {
+        margin-top: 20px;
+        padding: 12px 15px;
+        border: 1px solid #ddd;
+        width: 100%;
+        font-size: 13px;
+        background-color: #fcfcfc;
+    }
+    .amount-in-words { font-weight: 700; }
+    .bank-details { font-family: Consolas, Monaco, monospace; font-size: 12px; }
+
+    /* --- Signature Area Styles (Screen) --- */
+    .signature-area {
+        margin-top: 40px; /* Space above signature (screen) */
+        display: flex;
+        justify-content: flex-end; /* Align to the right */
+        width: 100%;
+        padding-top: 20px; /* Space below content, above signature lines (screen) */
+        text-align: center;
+        font-size: 12px;
+    }
+    .signature-block {
+        width: 200px; /* Fixed width for the signature area block (screen) */
+        border-top: 1px solid #000; /* The signature line (screen) */
+        padding-top: 5px;
+        font-weight: 700;
+    }
+
+    /* Styling for the instruction text */
+    .print-instruction {
+        text-align: center;
+        margin-top: 20px;
+        font-size: 14px;
+        color: #555;
+    }
+
+
+    /* --- Responsive Styles (for screens smaller than 768px) --- */
+    @media screen and (max-width: 768px) {
+        body { font-size: 14px; }
+        .a4-container { width: 100%; min-height: auto; margin: 0; box-shadow: none; padding: 15px; max-width: none; } /* Remove max-width, adjust padding */
+        .section { margin-bottom: 15px; }
+        .top-header { flex-direction: column; align-items: center; margin-bottom: 10px; }
+        .top-left h1 { font-size: 20px; }
+        .top-left small { font-size: 12px; }
+        .top-right { margin-top: 10px; }
+        .top-right img { max-width: 80px; }
+        .info-table td { display: block; width: 100% !important; padding: 0 !important; margin-bottom: 15px; }
+        .info-table td:last-child { margin-bottom: 0; }
+        .info-table .form-field { flex-direction: column; align-items: flex-start; margin-bottom: 10px; }
+        .info-table .form-field label { width: auto; margin-right: 0; margin-bottom: 4px; padding-top: 0; font-size: 12px; }
+        .info-table .form-field input, .info-table .form-field textarea { width: 100%; font-size: 13px; min-height: unset; height: auto; resize: vertical; outline: 1px solid #ccc; border: none;} /* Keep outlines on mobile */
+        /* Adjust min-height for Address textarea on smaller screens */
+         .info-table .form-field textarea { min-height: 45px; }
+        /* Adjust min-height for Item Description textarea on smaller screens */
+         .item-table textarea { min-height: 50px; }
+
+        /* Make item table horizontally scrollable */
+        .item-table-container {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin-bottom: 15px;
+        }
+         /* Allow columns to size based on content for scroll */
+         .item-table {
+             table-layout: auto;
+             width: auto;
+             min-width: 650px; /* Ensure enough min-width for readability */
+         }
+         .item-table th, .item-table td {
+             white-space: normal;
+         }
+          /* Re-adjust padding and font size for table cells on mobile */
+         .item-table th, .item-table td {
+             padding: 6px 8px; /* Use a different padding for mobile table cells */
+             font-size: 13px;
+         }
+         /* Input/textarea width on mobile - simplified as table-layout is auto */
+         .item-table tbody td input, .item-table tbody td textarea {
+             width: 100%; /* They can be 100% in auto layout table */
+             padding: 6px 8px; /* Restore screen padding for inputs */
+             outline: 1px solid #ccc; /* Keep outlines on mobile */
+             border: none;
+         }
+
+        /* Readonly inputs on mobile screen */
+        input[readonly] {
+             border: 1px dashed #ccc !important; /* Keep dashed border on mobile */
+             background-color: #f9f9f9 !important; /* Keep light background on mobile */
+             padding: 4px 6px !important; /* Keep padding on mobile */
+             font-size: 13px !important; /* Match other mobile font sizes */
+             width: 100% !important; /* Take full width in mobile tables */
+        }
+         table.invoice-table td input[readonly] {
+             width: 100% !important; /* Ensure full width in cells */
+         }
+          .currency-input-flex input[readonly] {
+              flex-grow: 1 !important; /* Allow growth */
+              min-width: unset !important; /* Remove min-width constraint */
+          }
+
+        .print-instruction {
+            font-size: 12px;
+            margin-top: 15px;
+        }
+
+
+        table.invoice-table:not(.item-table) { width: 100%; table-layout: auto; }
+        .details-block { margin-top: 15px; padding: 10px; font-size: 12px; }
+        .bank-details { font-size: 11px; }
+        .signature-area { margin-top: 30px; } /* Less space above signature on mobile */
+        .signature-block { width: 150px; } /* Smaller signature block on mobile */
+    }
+
+
+    /* --- Print specific styles --- */
+    @media print {
+      /* --- KEY CHANGE: Ensure body and html have no margin/padding AND overflow hidden --- */
+      html, body {
+          margin: 0 !important;
+          padding: 0 !important;
+          width: 100% !important;
+          height: auto !important; /* Or 297mm if strictly one page */
+          overflow: hidden !important; /* Prevent scrollbars in print */
+          background: #fff !important; /* Ensure white background */
+      }
+
+      /* --- KEY CHANGE: A4 container ONLY for print with fixed size and padding --- */
+      .a4-container {
+        width: 210mm;
+        min-height: 297mm; /* Use min-height so content can span pages if needed */
+        height: auto; /* Ensure height is not fixed */
+        margin: 0 !important; /* Remove screen margin and any potential leftover */
+        box-shadow: none !important; /* Remove shadow */
+        background: #fff !important; /* Ensure white background */
+        /* --- FIX 2: Apply desired A4 padding (15mm top/bottom, 20mm left/right) --- */
+        padding: 15mm 20mm !important;
+        max-width: none !important; /* Ensure it takes full A4 width in print */
+        /* Page break controls - ensure the container itself doesn't break awkwardly */
+        page-break-after: avoid;
+        page-break-before: avoid;
+        /* Removed page-break-inside: avoid from container - allows multi-page invoices */
+      }
+
+       /* --- FIX 1: Remove margin-top from the very first section/element in print --- */
+       /* Target the first direct child section of the container */
+       .a4-container > .section:first-child {
+            margin-top: 0 !important;
+       }
+        /* --- FIX 1 (cont.): Also ensure no padding-top on the first cell if it affects alignment --- */
+        /* This targets the first td of the info table inside the first section */
+       .a4-container > .section:first-child .invoice-table.info-table td:first-child {
+           padding-top: 0 !important;
+       }
+
+
+      /* Hide non-print elements */
+      /* --- FIX: Removed .item-table-container from this list --- */
+      button, .no-print, .print-instruction { /* Hide button and instruction text */
+        display: none !important;
+      }
+
+       /* Re-show the table directly inside .section for print */
+       /* This rule now correctly targets the table *inside* the visible container */
+       .section .invoice-table:not(.info-table) {
+            display: table; /* Or table-layout */
+            width: 100%; /* Ensure it takes full width in print */
+            table-layout: fixed; /* Use fixed layout for column control in print */
+            margin-top: 10px !important; /* Retain some space above item table in print */
+       }
+
+
+      /* --- KEY CHANGE: Ensure all form elements have no borders/outlines/shadows in print --- */
+       input, textarea, select { /* Added select in case you add dropdowns */
+            border: none !important;
+            background: none !important;
+            padding: 0 !important; /* Still remove padding from the element itself */
+            margin: 0 !important;
+            box-shadow: none !important;
+            outline: 0 !important; /* Very aggressive outline removal */
+            resize: none !important; /* Prevent resizing in print */
+            overflow: visible !important; /* Ensure content is visible */
+            white-space: normal !important; /* Allow text to wrap */
+            word-wrap: break-word !important;
+            overflow-wrap: break-word !important;
+            height: auto !important; /* Let height be determined by content */
+            min-height: unset !important; /* Remove min-height constraint */
+            color: #000 !important; /* Ensure text is black */
+            -webkit-print-color-adjust: exact !important; /* Attempt to print background/colors precisely */
+            color-adjust: exact !important;
+       }
+       input[type="date"]::-webkit-calendar-picker-indicator { display: none; }
+
+       /* Font sizes for print (using pt units) - Decreased sizes slightly */
+       body, table, input, textarea { font-size: 8.5pt; color: #000; } /* Slightly smaller base font size for print */
+       /* Ensure font weights are respected in print */
+        h1, th, tfoot td, .section-title, .amount-in-words, .currency-input-flex span, input[readonly] {
+            font-weight: 700 !important;
+        }
+        label { font-weight: 400 !important;}
+
+       /* Explicit print height/min-height for textareas in pt units - Adjusted based on new font size */
+       .info-table .form-field textarea {
+           /* Approx 3 lines at 7pt font + 1.4 line height = 29.4pt. Use 34pt. */
+            height: 34pt !important;
+            min-height: 34pt !important;
+       }
+       .item-table textarea {
+           /* Approx 3 lines at 8.5pt font + 1.4 line height = 35.7pt. Use 38pt. */
+            height: 38pt !important;
+            min-height: 38pt !important;
+       }
+
+
+       .top-left h1 { font-size: 14pt; } /* Adjusted print font size */
+       .top-left small { font-size: 6pt; }
+       .section-title { font-size: 7.5pt; }
+       .company-info, .gstin-info { font-size: 7pt; }
+
+       /* Print styles for info table form fields (back to side-by-side) */
+        .info-table .form-field {
+             flex-direction: row;
+             align-items: flex-start;
+             margin-bottom: 4px;
+        }
+        .info-table .form-field label {
+            width: 65pt; /* Slightly smaller fixed width in points for print */
+            font-size: 7pt;
+             margin-right: 4pt;
+             padding-top: 0 !important;
+        }
+        .info-table .form-field input,
+        .info-table .form-field textarea { font-size: 7pt; padding: 0 !important; flex-grow: 1;}
+
+
+       table.invoice-table thead th { font-size: 7pt; white-space: normal; } /* Header font size */
+       table.invoice-table tbody td, table.invoice-table tfoot td {
+           font-size: 7.5pt; /* Body/footer font size */
+           padding: 2px 4px; /* Even tighter print padding for item table */
+           white-space: normal;
+        }
+       input[readonly], table.invoice-table td input[readonly] {
+           font-size: 7.5pt;
+           white-space: nowrap !important; /* KEEP nowrap for readonly numbers */
+           text-align: right !important; /* Ensure right alignment */
+           padding: 0 !important; /* Remove padding */
+           display: inline-block !important; /* Ensure it behaves inline */
+           width: auto !important; /* Allow width based on content */
+        }
+        /* Fix specific alignment for readonly inputs inside cells */
+        table.invoice-table td input[readonly] {
+             text-align: right !important;
+        }
+
+
+        /* Print styles for the currency/input flex container */
+       .currency-input-flex {
+            gap: 1px;
+            justify-content: flex-end !important; /* Ensure right alignment in print */
+       }
+       .currency-input-flex input[readonly] {
+           min-width: 35pt !important; /* Smaller min width */
+           flex-grow: 0 !important; /* Don't grow in print */
+       }
+
+
+       .details-block { font-size: 7pt; margin-top: 8px; padding: 4px 6px; } /* Smaller padding/font */
+       .bank-details { font-size: 6pt; } /* Smaller font */
+       .section { margin-bottom: 6px; } /* Tighter print sections */
+       .form-field { margin-bottom: 3px; }
+
+        /* --- KEY CHANGE: Signature Area Print Styles --- */
+       .signature-area {
+           margin-top: 15mm !important; /* Sufficient space for signature area in print */
+           page-break-before: avoid; /* Avoid breaking right before signature */
+           justify-content: flex-end; /* Align to the right */
+           width: 100%;
+           padding-top: 0 !important; /* Remove any top padding in print */
+           text-align: center; /* Center text within the signature block */
+           font-size: 7.5pt; /* Signature text font size */
+           line-height: 1.1; /* Tighter line spacing for signature text */
+       }
+       .signature-block {
+            width: 40mm; /* Adjust fixed width for the signature area block in print */
+            border-top: 0.7pt solid #000; /* The signature line (use pt for print border, slightly thinner) */
+            padding-top: 3pt; /* Space above text below the line */
+            font-weight: 700 !important;
+            page-break-inside: avoid; /* Avoid breaking inside the signature block */
+       }
+
+
+       /* Prevent breaking inside elements in print */
+       table, tr, .details-block, .section, .signature-area { page-break-inside: avoid; }
+
+       thead { display: table-header-group; }
+       tfoot { display: table-footer-group; }
+       /* Ensure break is allowed AFTER rows/sections */
+       tr { page-break-after: auto; }
+       .section { page-break-after: auto; }
+
+
+    }
+
+    /* `@page` rule defines the actual paper size and margins for printing */
+    @page {
+      size: A4; /* Specify A4 size */
+      margin: 0; /* Reset default browser print margins */
+    }
+
+  </style>
+</head>
+<body>
+    <!-- The main container that acts as the A4 page -->
+    <div class="a4-container" id="invoice">
+        <!-- Header -->
+        <div class="top-header section">
+          <div class="top-left">
+            <h1>Tax Invoice</h1>
+            <small>#Quotation</small>
+          </div>
+          <div class="top-right">
+             <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjYwIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgNjAiPgogIDxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iNjAiIGZpbGw9IiMwMDc4ZDQiLz4KICA8dGV4dCB4PSI1MCIgeT0iMzUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0id2hpdGUiPkxPR088L2x0ZXh0Pgo8L3N2Zw==" alt="Logo" style="max-height: 50px;" />
+          </div>
+        </div>
+
+        <!-- Company & Bill To Section -->
+        <div class="section">
+             <table class="invoice-table info-table">
+                <tr>
+                    <td style="width: 50%;">
+                      <div class="section-title">Company Name</div>
+                      <div class="company-info">
+                        XYZ Pvt. Ltd.<br />
+                        123, Industrial Area<br />
+                        New Delhi - 110011<br />
+                        Email: info@xyz.com<br />
+                        Phone: +91-9876543210
+                      </div>
+                    </td>
+                    <td style="width: 50%;">
+                      <div class="section-title">Bill To:</div>
+                      <div class="form-field">
+                        <label>Name:</label>
+                        <input type="text" placeholder="Enter name" />
+                      </div>
+                      <div class="form-field">
+                        <label>Address:</label>
+                        <textarea placeholder="Enter address"></textarea>
+                      </div>
+                      <div class="form-field">
+                        <label>Email:</label>
+                        <input type="email" placeholder="Enter email" />
+                      </div>
+                      <div class="form-field">
+                        <label>Phone Number:</label>
+                        <input type="tel" placeholder="Enter phone number" />
+                      </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                      <div class="section-title" style="margin-top:10px;">Details:</div>
+                      <div class="gstin-info">
+                          <div><strong>GSTIN:</strong> 27AABCU9603R1ZV</div>
+                          <div><strong>CIN:</strong> U74999DL2018PTC123456</div>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="form-field" style="margin-top:10px;">
+                        <label>Invoice Number:</label>
+                        <input type="text" placeholder="Enter invoice number" />
+                      </div>
+                      <div class="form-field">
+                        <label>Invoice Date:</label>
+                        <input type="date" />
+                      </div>
+                    </td>
+                </tr>
+             </table>
+        </div>
+
+        <!-- Itemized Billing Table -->
+        <div class="section">
+           <!-- Wrap the item table for horizontal scrolling on small screens -->
+           <div class="item-table-container">
+                <table class="invoice-table item-table">
+                  <thead>
+                    <tr>
+                      <th>Sr. No.</th>
+                      <th>Description of Goods / Services</th>
+                      <th>HSN / SAC</th>
+                      <th>Qty</th>
+                      <th>Discount (₹)</th>
+                      <th>Taxable Value (₹)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>1</td>
+                      <td><textarea class="item-description" placeholder="Description"></textarea></td>
+                      <td><input type="text" class="item-hsn" placeholder="HSN/SAC" /></td>
+                      <td><input type="number" class="item-qty" placeholder="Qty" min="0" /></td>
+                      <td><input type="number" class="item-discount" placeholder="Discount (₹)" min="0" /></td>
+                      <td><input type="number" class="item-taxable-value" placeholder="Taxable Value (₹)" min="0" /></td>
+                    </tr>
+                  </tbody>
+                  <tfoot>
+                     <tr>
+                        <td colspan="5" style="text-align: right; font-weight: bold;">Total Taxable Value (A):</td>
+                        <td>
+                           <div class="currency-input-flex">
+                                <span>₹</span><input type="number" id="totalItemsTaxableValueInput" readonly />
+                           </div>
+                        </td>
+                      </tr>
+                  </tfoot>
+                </table>
+           </div> <!-- End of item-table-container -->
+        </div>
+
+        <!-- Tax Summary -->
+        <div class="section">
+            <table class="invoice-table">
+              <thead>
+                <tr>
+                  <th style="width: 50%;">Tax Summary</th>
+                  <th style="width: 25%;">Rate</th>
+                  <th style="width: 25%;">Amount (₹)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>CGST</td>
+                  <td>6%</td>
+                  <td>
+                     <div class="currency-input-flex">
+                        <span>₹</span><input type="number" id="cgst" readonly />
+                     </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>SGST</td>
+                  <td>6%</td>
+                  <td>
+                      <div class="currency-input-flex">
+                         <span>₹</span><input type="number" id="sgst" readonly />
+                      </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Total Tax (B)</strong></td>
+                  <td>12%</td>
+                  <td>
+                      <div class="currency-input-flex">
+                         <span>₹</span><input type="number" id="totalTax" readonly />
+                      </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Grand Total (A + B)</strong></td>
+                  <td></td>
+                  <td>
+                      <div class="currency-input-flex">
+                         <span>₹</span><input type="number" id="grandTotal" readonly />
+                      </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+        </div>
+
+        <!-- Amount in Words -->
+        <div class="details-block amount-in-words">
+          Amount in Words: Rupees <span id="amountInWords">Zero</span> Only
+        </div>
+
+        <!-- Bank Details -->
+        <div class="details-block bank-details">
+          <div><strong>Bank Details for Payment:</strong> XXXX</div>
+          <div><strong>Account Name:</strong> XXXXXX</div>
+          <div><strong>Account Number:</strong> 1234567890</div>
+          <div><strong>Bank Name:</strong> ABC Bank</div>
+          <div><strong>Branch:</strong> Main Branch</div>
+          <div><strong>IFSC Code:</strong> ABCD0123456</div>
+        </div>
+
+        <!-- Signature Area -->
+        <div class="signature-area">
+            <div class="signature-block">
+                For [Your Company Name]
+            </div>
+        </div>
+
+        <!-- Instruction text (hidden in print) -->
+        <div class="print-instruction no-print">
+            Click the button below, then in your browser's print dialog, choose "Save as PDF".
+        </div>
+
+        <!-- Download Button (hidden in print) -->
+        <button id="printPdfBtn" class="no-print" style="display: block; margin: 20px auto; padding: 10px 20px; font-size: 16px; cursor: pointer;">Generate PDF (Print Preview)</button>
+
+      </div> <!-- End of a4-container -->
+
+</body>
+<!-- Removed the html2pdf.js script -->
+<script>
+    // --- Calculation Logic ---
+    function updateTaxSummary() {
+      const itemRows = document.querySelectorAll(".invoice-table.item-table tbody tr");
+      let totalTaxableSumEntered = 0; // Sum of values entered in Taxable Value column
+      let totalDiscountSum = 0; // Sum of values entered in Discount column
+
+      itemRows.forEach(row => {
+        const taxableInput = row.querySelector(".item-taxable-value");
+        const discountInput = row.querySelector(".item-discount");
+
+        const taxableValue = parseFloat(taxableInput.value) || 0;
+        const discountValue = parseFloat(discountInput.value) || 0;
+
+        totalTaxableSumEntered += taxableValue;
+        totalDiscountSum += discountValue;
+      });
+
+      // Based on your calculation logic in the JS, it seems you are subtracting the *total* discount from the *sum* of *all* individual 'Taxable Value' fields.
+      // A more typical GST calculation might be:
+      // 1. Calculate the "Actual Value" for each item: (Qty * Price) - Discount
+      // 2. Sum the "Actual Value" for all items to get the Total Taxable Value.
+      // 3. Apply GST (CGST+SGST or IGST) to the Total Taxable Value.
+      // 4. Grand Total = Total Taxable Value + Total Tax.
+      //
+      // If your 'Taxable Value' field is intended to be the *final* amount for that item *after* discount,
+      // then the logic should just sum the 'Taxable Value' column and ignore the 'Discount' column for the total.
+      // Assuming your current logic is intentional:
+      const finalTaxableTotal = totalTaxableSumEntered - totalDiscountSum;
+
+
+      const totalItemsTaxableValueInput = document.getElementById("totalItemsTaxableValueInput");
+      if (totalItemsTaxableValueInput) {
+          if (!isNaN(finalTaxableTotal)) {
+               totalItemsTaxableValueInput.value = Math.max(0, finalTaxableTotal).toFixed(2); /* Ensure non-negative */
+          } else {
+               totalItemsTaxableValueInput.value = '';
+          }
+      }
+
+      // Calculate taxes based on the finalTaxableTotal
+      const cgstRate = 0.06;
+      const sgstRate = 0.06;
+      const totalAmountForTax = Math.max(0, finalTaxableTotal); /* Ensure non-negative for tax calc */
+
+      const cgst = (totalAmountForTax * cgstRate);
+      const sgst = (totalAmountForTax * sgstRate);
+      const totalTax = (cgst + sgst);
+      const grandTotal = (totalAmountForTax + totalTax); /* Grand Total = Final Taxable Total + Total Tax */
+
+      document.getElementById("cgst").value = isNaN(cgst) ? '' : cgst.toFixed(2);
+      document.getElementById("sgst").value = isNaN(sgst) ? '' : sgst.toFixed(2);
+      document.getElementById("totalTax").value = isNaN(totalTax) ? '' : totalTax.toFixed(2);
+      document.getElementById("grandTotal").value = isNaN(grandTotal) ? '' : grandTotal.toFixed(2);
+
+      updateAmountInWords();
+    }
+    // --- Amount in Words Logic (Indian Rupees) ---
+    const num = ['Zero', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+    const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+    function convertHundred(n) {
+      let str = '';
+      if (n >= 100) { str += num[Math.floor(n / 100)] + ' Hundred'; n %= 100; }
+      if (n > 0) {
+          if (str !== '') str += ' and ';
+          if (n < 20) { str += num[n]; } else { str += tens[Math.floor(n / 10)]; if (n % 10 > 0) str += ' ' + num[n % 10]; }
+      }
+      return str.trim();
+    }
+
+     // Specific Indian number to words function that handles Lakh/Crore and Paisa
+     function numberToIndianWords(n) {
+        if (isNaN(n) || n === null) return 'Zero';
+        n = parseFloat(n); // Ensure it's a number
+
+        if (n === 0) return 'Zero';
+
+        // Round to 2 decimal places and split
+        let [integerPartStr, decimalPartStr] = n.toFixed(2).split('.');
+        let integerPart = parseInt(integerPartStr);
+        let decimalPart = parseInt(decimalPartStr);
+
+        let words = '';
+
+        // Process Integer Part (Lakhs & Crores)
+        if (integerPart > 0) {
+            let parts = [];
+             // Crores
+            if (integerPart >= 10000000) {
+                parts.push(convertHundred(Math.floor(integerPart / 10000000)) + ' Crore');
+                integerPart %= 10000000;
+            }
+            // Lakhs
+            if (integerPart >= 100000) {
+                parts.push(convertHundred(Math.floor(integerPart / 100000)) + ' Lakh');
+                integerPart %= 100000;
+            }
+            // Thousands
+            if (integerPart >= 1000) {
+                parts.push(convertHundred(Math.floor(integerPart / 1000)) + ' Thousand');
+                integerPart %= 1000;
+            }
+             // Hundreds, Tens, and Ones
+            if (integerPart > 0) {
+                 parts.push(convertHundred(integerPart));
+            }
+
+            words = parts.join(' ').trim();
+        } else {
+             words = 'Zero'; // If integer part is 0 but decimal > 0, still say "Zero Rupees and ... Paisa"
+        }
+
+
+        // Process Decimal Part (Paisa)
+        if (decimalPart > 0) {
+            // Add "Rupees" after the integer part words only if integer part > 0
+            if (words !== 'Zero') words += ' Rupees';
+             else words = 'Zero Rupees'; // If integer part is zero, start with "Zero Rupees"
+            words += ' and ' + convertHundred(decimalPart) + ' Paisa';
+        } else {
+             if (words !== 'Zero') words += ' Rupees';
+             else words = 'Zero Rupees';
+        }
+
+
+        return words.trim();
+     }
+
+
+    function updateAmountInWords() {
+      const grandTotalInput = document.getElementById('grandTotal');
+      const amountInWordsSpan = document.getElementById('amountInWords');
+      if (grandTotalInput && amountInWordsSpan) {
+          let value = parseFloat(grandTotalInput.value) || 0;
+          // Pass the raw float value (rounded to 2 decimals) to the Indian words function
+          amountInWordsSpan.textContent = numberToIndianWords(value) + ' Only';
+      }
+    }
+    // --- Event Listeners ---
+    // Listen to input changes on all inputs and textareas within the item table tbody
+    document.querySelectorAll(".item-table tbody input, .item-table tbody textarea").forEach(element => {
+      element.addEventListener("input", updateTaxSummary);
+    });
+
+     // Add listeners to the info table inputs as well if their values affect calculations (like discount or taxable value could potentially) - though not currently used in your logic
+     document.querySelectorAll(".info-table input, .info-table textarea").forEach(element => {
+        // If you add logic later where info fields affect calculations, add listeners here
+        // element.addEventListener("input", updateTaxSummary);
+     });
+
+
+    // Initial calculation on load
+    window.addEventListener("load", updateTaxSummary);
+    // Download button listener
+    // Changed the button ID and the function called
+    document.getElementById("printPdfBtn").addEventListener('click', function() {
+        window.print(); // This triggers the browser's native print dialog
+    });
+
+    // Update serial numbers on load
+    function updateSerialNumbers() {
+        const rows = document.querySelectorAll(".item-table tbody tr");
+        rows.forEach((row, index) => {
+            const serialCell = row.querySelector("td:first-child");
+            if (serialCell) serialCell.textContent = index + 1;
+        });
+    }
+    window.addEventListener("load", updateSerialNumbers);
+</script>
+</html>
